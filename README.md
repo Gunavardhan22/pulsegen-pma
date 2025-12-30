@@ -10,9 +10,10 @@ The system is designed to be modular, scalable, and production-ready, featuring 
 
 - **Recursive Crawling**: Intelligent crawling ensuring domain restriction and handling of redirects/broken links.
 - **Content Extraction**: Parsing of meaningful content while stripping noise (navbars, footers).
-- **Module Inference**: Logic to group content into Modules and Submodules based on document hierarchy.
-- **AI-Powered Summarization**: Generates descriptions using NLP techniques (or heuristic extraction) strictly from source text.
-- **Multiple Interfaces**: CLI for automation and Streamlit for interactive exploration.
+- **Module Inference**: Logic to group content into Modules and Submodules based on document hierarchy and titles.
+- **AI-Powered Summarization**: Generates descriptions using NLP models (Transformers/Spacy) strictly from source text.
+- **Multiple Interfaces**: CLI, Streamlit UI, and a FastAPI integration.
+- **Caching**: Local filesystem caching to avoid redundant crawling and speed up repeat runs.
 - **Structured Output**: JSON output ready for downstream processing.
 
 ## Architecture

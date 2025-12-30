@@ -1,6 +1,7 @@
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 from collections import defaultdict
 import re
+from urllib.parse import urlparse
 from app.utils import setup_logger
 
 logger = setup_logger()
@@ -11,17 +12,18 @@ class ModuleInference:
     Strategies:
     1. URL Path Segments: /docs/deployment/aws -> Module: Deployment, Submodule: AWS
     2. Page Titles: "API Reference - Users" -> Module: API Reference, Submodule: Users
-    3. Hierarchy from H1/H2 tags within pages.
+    3. Heading structure from content blocks.
     """
 
     def __init__(self, start_urls: List[str]):
         # We assume the first start_url is the root for path analysis
-        self.root_path_segments = [s for s in start_urls[0].split('/') if s]
+        parsed = urlparse(start_urls[0])
+        self.root_path_segments = [s for s in parsed.path.split('/') if s]
         
     def infer_structure(self, crawled_data: List[Dict]) -> Dict[str, Any]:
         """
         Organizes flat crawled pages into a nested dictionary structure.
-        Returns: { "Module Name": { "content": [], "submodules": { "Submodule Name": { ... } } } }
+        Returns: { "Module Name": { "pages": [], "submodules": { "Submodule Name": { "pages": [] } } } }
         """
         logger.info("Inferring module structure...")
         
@@ -30,39 +32,39 @@ class ModuleInference:
 
         for page in crawled_data:
             url = page['url']
+            title = page.get('title', '')
+            
             path_segments = self._get_relevant_segments(url)
             
+            # Strategy 2: If path segments are poor, try to infer from title
+            if not path_segments or (len(path_segments) == 1 and path_segments[0].lower() in ['docs', 'index', 'home']):
+                inferred = self._infer_from_title(title)
+                if inferred:
+                    path_segments = inferred
+            
             if not path_segments:
-                # Fallback to title if path is too short (e.g. root page)
                 key = ("General",)
             else:
                 key = tuple([self._format_segment(s) for s in path_segments])
             
             grouped_pages[key].append(page)
 
-        # Build tree
+        # Build tree (Limit to 2 levels of hierarchy: Module -> Submodule)
         structure = {}
         
         for path_tuple, pages in grouped_pages.items():
             current_level = structure
             
-            # If path is empty or just root, put in a general bucket
-            if not path_tuple:
-                module_name = "General"
-            else:
-                module_name = path_tuple[0]
+            module_name = path_tuple[0] if path_tuple else "General"
 
             if module_name not in current_level:
                 current_level[module_name] = {"pages": [], "submodules": {}}
             
-            # If there are submodules (more segments)
             if len(path_tuple) > 1:
                 submodule_name = path_tuple[1]
                 if submodule_name not in current_level[module_name]["submodules"]:
                      current_level[module_name]["submodules"][submodule_name] = {"pages": []}
                 
-                # We currently support 1 level of nesting for simplicity as requested, 
-                # but we could go deeper.
                 current_level[module_name]["submodules"][submodule_name]["pages"].extend(pages)
             else:
                 current_level[module_name]["pages"].extend(pages)
@@ -71,31 +73,37 @@ class ModuleInference:
 
     def _get_relevant_segments(self, url: str) -> List[str]:
         """Extracts path segments that likely represent modules."""
-        # Simple heuristic: remove protocol/domain, split by /, ignore common prefixes
-        # This can be improved by comparing against the 'root' URL content.
+        parsed = urlparse(url)
+        path = parsed.path
+        parts = [p for p in path.split('/') if p and '.' not in p]
         
-        parts = [p for p in url.split('/') if p and '.' not in p and p not in ['http:', 'https:', 'www']]
-        # Filter out parts that are common to the root domain if possible, or just take the last N
-        # For a generic solution, taking the first 1-2 meaningful segments after domain is a good guess.
-        
-        # Heuristic: Skip the domain part.
-        # e.g. example.com/docs/api/v1 -> ['docs', 'api', 'v1']
-        # If docs is common, we might want 'api' as module.
-        
-        # Let's assume the segment AFTER the common prefix is the module.
-        # For now, just taking the last 2 identifier-like segments usually works for "Module/Submodule"
-        
+        # Filter out segments that are part of the root path
         relevant = []
-        for p in parts:
-            if p not in self.root_path_segments: # rudimentary exclusion
-               relevant.append(p)
+        for i, p in enumerate(parts):
+            if i < len(self.root_path_segments) and p == self.root_path_segments[i]:
+                continue
+            relevant.append(p)
                
-        # If method returned empty (url matches root segments exactly), return []
-        if not relevant and parts:
-             return [] 
-
         return relevant
+
+    def _infer_from_title(self, title: str) -> Optional[List[str]]:
+        """Infers hierarchy from page title like 'Module - Submodule'."""
+        # Common separators in Doc titles
+        separators = [' - ', ' | ', ' » ', ' : ']
+        for sep in separators:
+            if sep in title:
+                parts = title.split(sep)
+                # Usually titles are 'Page Title - Doc Title' or reversed
+                # Heuristic: The shorter part is likely the Module/category
+                # Or the one that doesn't change across many pages.
+                # Since we don't have global context here easily, let's take the last part if many,
+                # or the first part.
+                return [p.strip() for p in parts if p.strip()][:2]
+        return None
 
     def _format_segment(self, segment: str) -> str:
         """Converts 'getting-started' to 'Getting Started'."""
+        # Remove version numbers like v1, v2
+        if re.match(r'^v\d+$', segment.lower()):
+            return segment.upper()
         return segment.replace('-', ' ').replace('_', ' ').replace('.html', '').title()

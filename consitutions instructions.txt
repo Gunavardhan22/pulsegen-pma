@@ -1,0 +1,105 @@
+Overview 
+Create an AI-powered streamlit application that extracts structured information from 
+documentation-based help websites. The goal is to identify key modules and 
+submodules and generate detailed, accurate descriptions for each—entirely based on 
+the content from the URLs provided. 
+Let me introduce you to modules and submodules of a product. Each product can be 
+broken down into multiple modules which are managed by product managers. And 
+further these modules can be broken down into submodules. Let’s take an example of 
+Instagram, instagram is a product used by billions of people. Instagram can be broken 
+down into multiple modules that define instagram, like ‘posting an image’, ‘reels’, 
+‘stories’, ‘manage account’, etc. And all these modules have their own submodules that 
+have some specific task/functionality to perform. For example, ‘Manage Account’ is a 
+module that provides you the option to ‘delete your account’, ‘activate/deactivate 
+account’. Similarly, for ‘reels’ you can ‘create reels’, ‘edit reels’, ‘share reels’ and these all 
+become the submodules of ‘reels’ module. 
+Requirements 
+Core Functionality: 
+1. Accept one or more help documentation URLs as input (e.g., https://help.instagram.com/) 
+2. Automatically crawl and process the content from all relevant pages linked within the 
+URL(s) 
+3. Identify and extract: - Key modules representing major documentation categories - Submodules under each module - Detailed descriptions for both modules and submodules 
+4. Return a structured JSON output in the specified format 
+Technical Requirements 
+Input Handling - Accept one or more URLs via command-line or function input - Validate all input URLs - Recursively crawl relevant documentation pages - Handle edge cases like redirects, broken links, and unsupported formats 
+Content Processing - Extract only meaningful documentation content, excluding headers, footers, and 
+navigation - Maintain content hierarchy based on document structure and layout - Handle various HTML content formats such as text, lists, and tables 
+- Normalize content into a consistent internal representation 
+ 
+Module/Submodule Inference - Infer top-level modules from sections or primary topics in the documentation - Group logically connected subtopics under each module as submodules - Automatically generate detailed and accurate descriptions for each using extracted 
+content only 
+Output Format 
+{ 
+    { 
+      "module": "Module_1", 
+      "Description": "Detailed description of the module", 
+      "Submodules": { 
+        "submodule_1": "Detailed description of submodule 1", 
+        "submodule_2": "Detailed description of submodule 2" 
+       } 
+    }, 
+    { 
+      "module": "Module_2", 
+      "Description": "Detailed description of the module", 
+      "Submodules": { 
+        "submodule_1": "Detailed description of submodule 1", 
+        "submodule_2": "Detailed description of submodule 2" 
+       } 
+    } 
+} 
+Example Usage 
+# Start the module extractor 
+python module_extractor.py --urls https://help.instagram.com 
+ 
+# Sample Output 
+{ 
+    { 
+      "module":"Account Settings", 
+      "Description": "Includes features and tools for managing Instagram account 
+preferences, privacy, and credentials.", 
+      "Submodules": { 
+        "Change Username": "Explains how to update your Instagram handle and display 
+name via account settings." 
+      } 
+    }, 
+    { 
+      "module": "Content Sharing", 
+      "Description": "Covers tools and workflows for creating, editing, and 
+publishing content on Instagram.", 
+"Submodules": { 
+"Creating Reels": "Provides instructions for recording, editing, and sharing 
+short-form video content using Reels.", 
+"Tagging Users": "Details how to tag individuals or businesses in posts and 
+stories for engagement." 
+} 
+} 
+} 
+Evaluation Criteria 
+Accuracy & Structure (40%) - Correct identification of modules and submodules - Logical grouping and consistency - Quality and precision of generated descriptions 
+Technical Implementation (30%) - Intelligent use of structure and content cues to extract hierarchy - Resilient crawler and parser - Efficient data processing pipeline 
+Code Quality (15%) - Modular, maintainable architecture - Clean code and consistent style - Proper error handling and logging - Clear documentation and comments 
+Visual Demonstration - Max. 5 mins (15%) - Include screen recordings and screenshots showing: - Input URLs passed to the tool - Console or UI output with structured results - Visual confirmation that the tool successfully processes documentation 
+Bonus Points 
+1. Advanced Features 
+○ Support for multiple documentation sources 
+○ Answer caching mechanism 
+○ Support for different documentation formats 
+○ Confidence scores for answers 
+2. Technical Improvements 
+○ Docker containerization 
+○ API endpoint addition 
+○ Performance optimizations 
+Notes 
+1. You may use any programming language, but Python is preferred 
+2. Document any third-party libraries used 
+3. Include any assumptions made during implementation 
+4. Note any limitations of your approach 
+Submission Requirements 
+1. GitHub Repository - Private repo with code and a clear README - Include setup instructions, usage examples, design rationale, and known limitations 
+2. Documentation - Technical architecture description - Notes on approach, assumptions, and edge case handling 
+3. Testing - Sample inputs and expected outputs (Run your code on atleast 4 different URLs)  
+Here are some B2B companies help docs, you can test your code on any B2B company. 
+1. https://support.neo.space/hc/en-us 
+2. https://wordpress.org/documentation/ 
+3. https://help.zluri.com/ 
+4. https://www.chargebee.com/docs/2.0/ - Handling of deep nesting or sparse content

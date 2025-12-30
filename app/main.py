@@ -18,6 +18,7 @@ class ExtractionRequest(BaseModel):
     urls: List[str]
     max_depth: int = 2
     use_ai: bool = False
+    use_cache: bool = True
 
 @app.get("/")
 def read_root():
@@ -27,7 +28,7 @@ def read_root():
 def extract_modules(request: ExtractionRequest):
     try:
         # Crawl
-        crawled_data = run_crawler(request.urls, max_depth=request.max_depth)
+        crawled_data = run_crawler(request.urls, max_depth=request.max_depth, use_cache=request.use_cache)
         
         if not crawled_data:
             raise HTTPException(status_code=404, detail="No pages found to crawl.")

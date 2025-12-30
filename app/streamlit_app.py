@@ -22,29 +22,28 @@ and uses AI (or heuristics) to generate descriptions.
 """)
 
 # Sidebar settings
-st.sidebar.header("Configuration")
-url_input = st.sidebar.text_input("Documentation URL", "https://docs.python.org/3/")
-max_depth = st.sidebar.slider("Crawling Depth", 1, 5, 2)
-use_ai = st.sidebar.checkbox("Use AI Summarization", value=False, help="Uses a Transformer model. Slower but better quality.")
+st.sidebar.header("⚙️ Configuration")
+url_input = st.sidebar.text_input("🔗 Documentation URL", "https://docs.python.org/3/")
+max_depth = st.sidebar.slider("🕸️ Crawling Depth", 1, 5, 2)
+use_ai = st.sidebar.checkbox("🤖 Use AI Summarization", value=False, help="Uses a Transformer model. Slower but better quality.")
+use_cache = st.sidebar.checkbox("💾 Use Cache", value=True, help="Avoid re-crawling same pages.")
 
-if st.sidebar.button("Start Extraction"):
+if st.sidebar.button("🚀 Start Extraction", use_container_width=True):
     if not url_input:
         st.error("Please enter a URL.")
     else:
         status_container = st.container()
         
-        with st.spinner("Initializing..."):
+        with st.spinner("Initializing system..."):
             logger = setup_logger()
             start_urls = [url_input.strip()]
             
         # 1. Crawling
         with status_container:
-            st.info("Crawling documentation...")
+            st.info("🔍 Crawling documentation...")
             progress_bar = st.progress(0)
             
-            # We can't easily hook into the loop for real-time progress without callback changes,
-            # so we'll just show spinner.
-            crawled_data = run_crawler(start_urls, max_depth=max_depth)
+            crawled_data = run_crawler(start_urls, max_depth=max_depth, use_cache=use_cache)
             progress_bar.progress(33)
             
         if not crawled_data:
@@ -110,13 +109,16 @@ if st.sidebar.button("Start Extraction"):
                 )
             
             with tab2:
-                for item in final_output:
-                    with st.expander(f"📦 {item['module']}"):
-                        st.markdown(f"**Description:** {item['Description']}")
-                        if item['Submodules']:
-                            st.divider()
-                            st.markdown("### Submodules")
-                            for sub_name, sub_desc in item['Submodules'].items():
-                                st.markdown(f"**🔹 {sub_name}**")
-                                st.caption(sub_desc)
+                col1, col2 = st.columns([1, 1])
+                for i, item in enumerate(final_output):
+                    target_col = col1 if i % 2 == 0 else col2
+                    with target_col:
+                        with st.expander(f"📦 Module: **{item['module']}**", expanded=True):
+                            st.markdown(f"{item['Description']}")
+                            if item['Submodules']:
+                                st.markdown("---")
+                                st.caption("SUBMODULES")
+                                for sub_name, sub_desc in item['Submodules'].items():
+                                    st.markdown(f"🔹 **{sub_name}**")
+                                    st.write(sub_desc)
 

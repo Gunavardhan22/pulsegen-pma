@@ -4,12 +4,19 @@ from app.utils import setup_logger
 
 logger = setup_logger()
 
-# Optional: Try importing transformers, but provide fallback if not installed/too heavy
 try:
     from transformers import pipeline
     has_transformers = True
 except ImportError:
     has_transformers = False
+
+try:
+    import spacy
+    # Load a small model for sentence splitting
+    nlp = spacy.load("en_core_web_sm")
+    has_spacy = True
+except Exception:
+    has_spacy = False
 
 class Summarizer:
     """
@@ -52,8 +59,15 @@ class Summarizer:
 
     def _heuristic_summary(self, text: str) -> str:
         """Returns the first few meaningful sentences."""
-        sentences = text.split('.')
-        summary = ". ".join(sentences[:3]).strip()
+        if has_spacy:
+            doc = nlp(text[:2000]) # Limit input for spacy speed
+            sentences = [sent.text.strip() for sent in doc.sents]
+        else:
+            sentences = text.split('.')
+            
+        summary = " ".join(sentences[:3]).strip()
         if summary:
-            return summary + "."
+            if not summary.endswith('.'):
+                summary += "."
+            return summary
         return text[:300] + "..."

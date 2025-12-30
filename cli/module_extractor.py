@@ -20,6 +20,7 @@ def main():
     parser.add_argument("--output", default="output.json", help="Path to save the output JSON")
     parser.add_argument("--max-depth", type=int, default=2, help="Maximum crawling depth")
     parser.add_argument("--use-ai", action="store_true", help="Use AI for summarization (requires pytorch/transformers)")
+    parser.add_argument("--no-cache", action="store_true", help="Disable caching of crawled pages")
     
     args = parser.parse_args()
     
@@ -28,7 +29,7 @@ def main():
     logger.info(f"Starting extraction for: {start_urls}")
     
     # 1. Crawl
-    crawled_data = run_crawler(start_urls, max_depth=args.max_depth)
+    crawled_data = run_crawler(start_urls, max_depth=args.max_depth, use_cache=not args.no_cache)
     
     if not crawled_data:
         logger.error("No data crawled. Exiting.")
